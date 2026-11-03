@@ -4,7 +4,7 @@ echo "Cleaning old files..."
 
 # clicknoffice aur dist ko chhodkar baki delete
 find . -maxdepth 1 -mindepth 1 \
-! -name "clicknoffice" \
+! -name "backend" \
 ! -name "dist" \
 ! -name ".env" \
 -exec rm -rf {} +

@@ -18,13 +18,13 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 65002
           script: |
-            cd ~/domains/office.clickncult.com/public_html
+            cd ~/domains/ias.clickncult.com/public_html
             [ -f .env ] && cp -f .env .env.keep 2>/dev/null || true
-            [ -f clicknoffice/.env ] && cp -f clicknoffice/.env clicknoffice/.env.keep 2>/dev/null || true
+            [ -f backend/.env ] && cp -fbackend/.env backend/.env.keep 2>/dev/null || true
             git fetch origin main
             git reset --hard origin/main
-            git clean -fd -e .env -e .env.keep -e clicknoffice/.env -e clicknoffice/.env.keep
+            git clean -fd -e .env -e .env.keep -e backend/.env -e backend/.env.keep
             [ -f .env.keep ] && mv -f .env.keep .env 2>/dev/null || true
-            [ -f clicknoffice/.env.keep ] && mv -f clicknoffice/.env.keep clicknoffice/.env 2>/dev/null || true
+            [ -f backend/.env.keep ] && mv -f backend/.env.keep backend/.env 2>/dev/null || true
             chmod +x deploy.sh
             ./deploy.sh
