@@ -1,23 +1,30 @@
 #!/bin/bash
 
-echo "Cleaning old files...."
+echo "Deploying to public_html..."
 
-# clicknoffice aur dist ko chhodkar baki delete
-find . -maxdepth 1 -mindepth 1 \
+# 1. public_html me se purani files clean karo (ias-website, backend, .env, .well-known chhodkar)
+find .. -maxdepth 1 -mindepth 1 \
+! -name "ias-website" \
 ! -name "backend" \
-! -name "dist" \
-! -name ".env" \
+! -name ".env*" \
+! -name ".well-known*" \
 -exec rm -rf {} +
 
-echo "Moving dist files..."
+# 2. backend files ko ../backend me sync karo
+mkdir -p ../backend
+cp -r backend/. ../backend/ 2>/dev/null || true
 
-# dist ka content bahar lao
-mv dist/* .
+# 3. dist ke content ko public_html me copy karo (including hidden files)
+if [ -d "dist" ]; then
+    cp -r dist/. .. 2>/dev/null || true
+fi
 
-# hidden files agar hain
-mv dist/.[!.]* . 2>/dev/null
+# 4. React routing ke liye root .htaccess set karo
+if [ -f "frontend/.htaccess" ]; then
+    cp frontend/.htaccess ../.htaccess
+fi
 
-# dist folder delete
-rm -rf dist
+# 5. Security: ias-website source code ko browser se direct download hone se bachao
+echo -e "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Deny from all\n</IfModule>" > .htaccess 2>/dev/null || true
 
-echo "Done!"
+echo "Done! Successfully deployed to public_html"
