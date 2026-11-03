@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Cleaning old files..."
+echo "Cleaning old files...."
 
 # clicknoffice aur dist ko chhodkar baki delete
 find . -maxdepth 1 -mindepth 1 \
