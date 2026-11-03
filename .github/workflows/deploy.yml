@@ -20,7 +20,7 @@ jobs:
           script: |
             cd ~/domains/ias.clickncult.com/public_html
             [ -f .env ] && cp -f .env .env.keep 2>/dev/null || true
-            [ -f backend/.env ] && cp -fbackend/.env backend/.env.keep 2>/dev/null || true
+            [ -f backend/.env ] && cp -f backend/.env backend/.env.keep 2>/dev/null || true
             git fetch origin main
             git reset --hard origin/main
             git clean -fd -e .env -e .env.keep -e backend/.env -e backend/.env.keep
