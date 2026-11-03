@@ -1,0 +1,30 @@
+name: Deploy Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 65002
+          script: |
+            cd ~/domains/office.clickncult.com/public_html
+            [ -f .env ] && cp -f .env .env.keep 2>/dev/null || true
+            [ -f clicknoffice/.env ] && cp -f clicknoffice/.env clicknoffice/.env.keep 2>/dev/null || true
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd -e .env -e .env.keep -e clicknoffice/.env -e clicknoffice/.env.keep
+            [ -f .env.keep ] && mv -f .env.keep .env 2>/dev/null || true
+            [ -f clicknoffice/.env.keep ] && mv -f clicknoffice/.env.keep clicknoffice/.env 2>/dev/null || true
+            chmod +x deploy.sh
+            ./deploy.sh

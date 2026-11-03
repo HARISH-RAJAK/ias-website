@@ -1,0 +1,19 @@
+{
+  "name": "upsc-portal/backend-api",
+  "description": "Core PHP REST API Backend for UPSC Education Portal",
+  "type": "project",
+  "require": {
+    "php": ">=7.4",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "autoload": {
+    "classmap": [
+      "controllers/",
+      "models/",
+      "middleware/",
+      "helpers/",
+      "config/"
+    ]
+  }
+}
+

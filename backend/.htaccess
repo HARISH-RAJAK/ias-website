@@ -1,0 +1,20 @@
+# Disable directory browsing
+Options -Indexes
+
+# Deny access to sensitive files and directories
+<FilesMatch "^\.env|\.(json|lock|sql|log|md|yml|yaml)$">
+    Require all denied
+</FilesMatch>
+
+# Protect system and private folders
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent direct access to backend internal folders
+    RewriteRule ^(config|controllers|models|routes|middleware|helpers|database)/ - [F,L]
+
+    # Redirect all requests to public/ directory
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
