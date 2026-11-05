@@ -42,6 +42,36 @@ class Router {
             return;
         }
 
+        // Database Migration endpoint: /api/migrate
+        if ($method === 'GET' && ($uri === '/api/migrate' || $uri === '/migrate')) {
+            $pdo = Database::getConnection();
+            if (!$pdo) {
+                errorResponse("Database not connected. Please verify backend/.env settings.", 500);
+                return;
+            }
+
+            $schemaFile = dirname(__DIR__) . '/database/schema.sql';
+            if (!file_exists($schemaFile)) {
+                errorResponse("schema.sql file not found.", 404);
+                return;
+            }
+
+            $sql = file_get_contents($schemaFile);
+            $sql = preg_replace('/CREATE DATABASE[^;]+;/i', '', $sql);
+            $sql = preg_replace('/USE[^;]+;/i', '', $sql);
+
+            try {
+                $pdo->exec($sql);
+                jsonResponse([
+                    'status' => 'success',
+                    'message' => 'All database tables and seed data created successfully!',
+                ], 200);
+            } catch (Throwable $e) {
+                errorResponse("Migration error: " . $e->getMessage(), 500);
+            }
+            return;
+        }
+
         // 2. Authentication routes
         $authController = new AuthController();
         if ($method === 'POST' && ($uri === '/api/register' || $uri === '/register')) {

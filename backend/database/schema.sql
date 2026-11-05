@@ -1,14 +1,7 @@
 -- =====================================================================
 -- DATABASE SCHEMA: Sankalp IAS - UPSC Education Portal
--- Target Database: upsc_portal
--- Compatible with MySQL 5.7+ / MySQL 8.0+ / MariaDB (XAMPP)
+-- Compatible with MySQL 5.7+ / MySQL 8.0+ / MariaDB / Hostinger
 -- =====================================================================
-
-CREATE DATABASE IF NOT EXISTS `upsc_portal` 
-CHARACTER SET utf8mb4 
-COLLATE utf8mb4_unicode_ci;
-
-USE `upsc_portal`;
 
 -- Disable foreign key checks for clean re-creation
 SET FOREIGN_KEY_CHECKS = 0;

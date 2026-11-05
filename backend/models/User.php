@@ -11,6 +11,34 @@ class User {
 
     public function __construct() {
         $this->db = Database::getConnection();
+        $this->ensureTableExists();
+    }
+
+    /**
+     * Auto-create users table if not already present in the database
+     */
+    public function ensureTableExists(): void {
+        if (!$this->db) {
+            return;
+        }
+
+        try {
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `users` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `name` VARCHAR(150) NOT NULL,
+                    `email` VARCHAR(191) NOT NULL UNIQUE,
+                    `password` VARCHAR(255) NOT NULL,
+                    `role` ENUM('student', 'faculty', 'admin') NOT NULL DEFAULT 'student',
+                    `avatar` VARCHAR(500) NULL,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_users_role` (`role`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        } catch (Throwable $e) {
+            error_log("Failed to auto-create users table: " . $e->getMessage());
+        }
     }
 
     public function findByEmail(string $email): ?array {
@@ -45,6 +73,18 @@ class User {
             $user = $stmt->fetch();
             return $user ?: null;
         } catch (Throwable $e) {
+            // If table doesn't exist (1146 / 42S02), auto-create and retry
+            if ($e->getCode() == '42S02' || str_contains($e->getMessage(), '1146')) {
+                $this->ensureTableExists();
+                try {
+                    $stmt = $this->db->prepare("SELECT * FROM users WHERE email = :email LIMIT 1");
+                    $stmt->execute([':email' => $email]);
+                    $user = $stmt->fetch();
+                    return $user ?: null;
+                } catch (Throwable $retryEx) {
+                    return null;
+                }
+            }
             error_log("findByEmail error: " . $e->getMessage());
             return null;
         }
@@ -71,13 +111,14 @@ class User {
         }
 
         try {
-            // Try selecting with avatar
             $stmt = $this->db->prepare("SELECT id, name, email, role, avatar, created_at FROM users WHERE id = :id LIMIT 1");
             $stmt->execute([':id' => $id]);
             $user = $stmt->fetch();
             return $user ?: null;
         } catch (Throwable $e) {
-            // Fallback without avatar column if not present in schema
+            if ($e->getCode() == '42S02' || str_contains($e->getMessage(), '1146')) {
+                $this->ensureTableExists();
+            }
             try {
                 $stmt = $this->db->prepare("SELECT id, name, email, role, created_at FROM users WHERE id = :id LIMIT 1");
                 $stmt->execute([':id' => $id]);
@@ -115,9 +156,24 @@ class User {
             ]);
             return (int)$this->db->lastInsertId();
         } catch (PDOException $e) {
+            // If table doesn't exist (1146 / 42S02), auto-create and retry
+            if ($e->getCode() == '42S02' || str_contains($e->getMessage(), '1146')) {
+                $this->ensureTableExists();
+                $sql = "INSERT INTO users (name, email, password, role, avatar, created_at, updated_at) 
+                        VALUES (:name, :email, :password, :role, :avatar, NOW(), NOW())";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    ':name'     => $data['name'],
+                    ':email'    => $data['email'],
+                    ':password' => $hashedPassword,
+                    ':role'     => $role,
+                    ':avatar'   => $avatar,
+                ]);
+                return (int)$this->db->lastInsertId();
+            }
+
             // If avatar column is missing in users table (SQLSTATE 42S22 or 1054)
             if ($e->getCode() == '42S22' || str_contains($e->getMessage(), 'Unknown column') || str_contains($e->getMessage(), '1054')) {
-                // Try adding column automatically
                 try {
                     $this->db->exec("ALTER TABLE users ADD COLUMN avatar VARCHAR(500) NULL AFTER role");
                     $sql = "INSERT INTO users (name, email, password, role, avatar, created_at, updated_at) 
@@ -161,7 +217,6 @@ class User {
                 ':id'     => $id,
             ]);
         } catch (Throwable $e) {
-            // If column does not exist, try creating it once
             try {
                 $this->db->exec("ALTER TABLE users ADD COLUMN avatar VARCHAR(500) NULL AFTER role");
                 $stmt = $this->db->prepare("UPDATE users SET avatar = :avatar, updated_at = NOW() WHERE id = :id");
