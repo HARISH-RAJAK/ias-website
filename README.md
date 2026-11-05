@@ -1,6 +1,6 @@
 # UPSC Education Portal (Sankalp IAS)
 
-A full-stack web application designed for civil service aspirants preparing for the **UPSC Civil Services Examination (CSE)**. The portal integrates daily editorial analysis, a high-yield Prelims MCQ test engine with negative marking simulation, a secure Mains answer writing platform with faculty synopsis, structured courses, and an aspirant dashboard.
+A full-stack web application designed for civil service aspirants preparing for the **UPSC Civil Services Examination (CSE)**. The portal integrates daily editorial analysis, a high-yield Prelims MCQ test engine with negative marking simulation, a secure Mains answer writing platform with faculty synopsis, structured courses, and an aspirant dashboard.d
 
 ---
 

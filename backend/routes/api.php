@@ -51,6 +51,10 @@ class Router {
             $authController->login();
             return;
         }
+        if ($method === 'POST' && ($uri === '/api/auth/google' || $uri === '/api/google-login' || $uri === '/auth/google' || $uri === '/google-login')) {
+            $authController->googleLogin();
+            return;
+        }
         if ($method === 'POST' && ($uri === '/api/logout' || $uri === '/logout')) {
             $authController->logout();
             return;

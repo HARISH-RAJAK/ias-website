@@ -67,9 +67,18 @@ const Navbar = () => {
                   to="/dashboard"
                   className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-amber-700 bg-gray-50 hover:bg-amber-50 px-3 py-1.5 rounded-full border border-gray-200 transition-colors"
                 >
-                  <span className="w-7 h-7 rounded-full bg-amber-700 text-white flex items-center justify-center text-xs font-semibold">
-                    {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                  </span>
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name || "User"}
+                      className="w-7 h-7 rounded-full object-cover border border-amber-600"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <span className="w-7 h-7 rounded-full bg-amber-700 text-white flex items-center justify-center text-xs font-semibold">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                    </span>
+                  )}
                   <span className="max-w-[120px] truncate">{user?.name}</span>
                 </Link>
                 <button

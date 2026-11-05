@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -45,7 +46,7 @@ const Login = () => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-gray-200">
+      <div className="max-w-md w-full space-y-6 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-gray-200">
         <div className="text-center">
           <div className="w-12 h-12 rounded-xl bg-amber-700 text-white font-serif font-bold text-2xl flex items-center justify-center mx-auto shadow-md">
             सं
@@ -64,7 +65,27 @@ const Login = () => {
           </div>
         )}
 
-        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+        {/* Google One-Click Login */}
+        <div className="pt-2">
+          <GoogleSignInButton
+            textType="signin_with"
+            onSuccess={() => navigate(from, { replace: true })}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-3 text-gray-400 font-semibold tracking-wider text-[11px]">
+              Or continue with email
+            </span>
+          </div>
+        </div>
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
               Email Address
@@ -104,7 +125,7 @@ const Login = () => {
               disabled={loading}
               className="w-full py-2.5 px-4 bg-amber-700 hover:bg-amber-800 text-white text-sm font-semibold rounded-lg shadow-sm disabled:opacity-50 transition-colors"
             >
-              {loading ? "Authenticating..." : "Sign In to Portal"}
+              {loading ? "Authenticating..." : "Sign In with Email"}
             </button>
           </div>
         </form>
@@ -144,4 +165,3 @@ const Login = () => {
 };
 
 export default Login;
-

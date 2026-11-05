@@ -20,6 +20,13 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
+# Route API and Backend requests to PHP Backend public/index.php
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^api/(.*)$ backend/public/index.php [QSA,L]
+    RewriteRule ^backend/(.*)$ backend/public/index.php [QSA,L]
+</IfModule>
+
 # React Router fallback for Single Page Application
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -29,4 +36,3 @@ Options -Indexes
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule . /index.html [L]
 </IfModule>
-

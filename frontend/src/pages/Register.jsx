@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -58,7 +59,7 @@ const Register = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-gray-200">
+      <div className="max-w-md w-full space-y-6 bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-gray-200">
         <div className="text-center">
           <div className="w-12 h-12 rounded-xl bg-amber-700 text-white font-serif font-bold text-2xl flex items-center justify-center mx-auto shadow-md">
             सं
@@ -77,7 +78,27 @@ const Register = () => {
           </div>
         )}
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        {/* Google One-Click Registration */}
+        <div className="pt-2">
+          <GoogleSignInButton
+            textType="signup_with"
+            onSuccess={() => navigate("/dashboard")}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-3 text-gray-400 font-semibold tracking-wider text-[11px]">
+              Or register with email
+            </span>
+          </div>
+        </div>
+
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
               Full Name
@@ -178,4 +199,3 @@ const Register = () => {
 };
 
 export default Register;
-

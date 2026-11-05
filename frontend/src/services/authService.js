@@ -4,21 +4,34 @@ export const authService = {
   // Register a new user
   async register(userData) {
     const response = await api.post("/register", userData);
-    if (response.data?.token) {
-      localStorage.setItem("upsc_token", response.data.token);
-      localStorage.setItem("upsc_user", JSON.stringify(response.data.user));
+    const payload = response.data?.data || response.data || {};
+    if (payload.token) {
+      localStorage.setItem("upsc_token", payload.token);
+      localStorage.setItem("upsc_user", JSON.stringify(payload.user));
     }
-    return response.data;
+    return payload;
   },
 
   // Login existing user
   async login(credentials) {
     const response = await api.post("/login", credentials);
-    if (response.data?.token) {
-      localStorage.setItem("upsc_token", response.data.token);
-      localStorage.setItem("upsc_user", JSON.stringify(response.data.user));
+    const payload = response.data?.data || response.data || {};
+    if (payload.token) {
+      localStorage.setItem("upsc_token", payload.token);
+      localStorage.setItem("upsc_user", JSON.stringify(payload.user));
     }
-    return response.data;
+    return payload;
+  },
+
+  // Google OAuth Login / Sign Up
+  async googleLogin(credential) {
+    const response = await api.post("/auth/google", { credential });
+    const payload = response.data?.data || response.data || {};
+    if (payload.token) {
+      localStorage.setItem("upsc_token", payload.token);
+      localStorage.setItem("upsc_user", JSON.stringify(payload.user));
+    }
+    return payload;
   },
 
   // Logout current user
@@ -36,16 +49,21 @@ export const authService = {
   // Fetch authenticated user profile
   async getMe() {
     const response = await api.get("/me");
-    if (response.data?.user) {
-      localStorage.setItem("upsc_user", JSON.stringify(response.data.user));
+    const payload = response.data?.data || response.data || {};
+    if (payload.user) {
+      localStorage.setItem("upsc_user", JSON.stringify(payload.user));
     }
-    return response.data;
+    return payload;
   },
 
   // Get locally saved user
   getCurrentUser() {
     const user = localStorage.getItem("upsc_user");
-    return user ? JSON.parse(user) : null;
+    try {
+      return user ? JSON.parse(user) : null;
+    } catch {
+      return null;
+    }
   },
 
   // Check if authenticated
@@ -55,4 +73,3 @@ export const authService = {
 };
 
 export default authService;
-

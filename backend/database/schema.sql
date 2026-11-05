@@ -35,7 +35,7 @@ CREATE TABLE `users` (
     `email` VARCHAR(191) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
     `role` ENUM('student', 'faculty', 'admin') NOT NULL DEFAULT 'student',
-    `avatar` VARCHAR(255) NULL,
+    `avatar` VARCHAR(500) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX `idx_users_role` (`role`)
