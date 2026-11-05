@@ -24,7 +24,8 @@ class Router {
             $uri = '/';
         }
 
-        // Strip prefix if any (e.g. /public or index.php)
+        // Strip prefix if any (e.g. /backend, /public, /index.php)
+        $uri = preg_replace('#^/backend#', '', $uri);
         $uri = preg_replace('#^/public#', '', $uri);
         $uri = preg_replace('#^/index\.php#', '', $uri);
 
