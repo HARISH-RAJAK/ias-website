@@ -1,11 +1,12 @@
 # Disable Directory Listing
 Options -Indexes
 
-# CORS Headers (redundancy for PHP)
+# CORS & Security Headers for Google Identity Services
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "http://localhost:8000"
+    Header set Access-Control-Allow-Origin "https://ias.clickncult.com"
     Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header set Cross-Origin-Opener-Policy "same-origin-allow-popups"
 </IfModule>
 
 # Handle OPTIONS requests for CORS preflight

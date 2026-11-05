@@ -87,75 +87,80 @@ class AuthController {
      * Verifies Google ID token and returns authenticated session
      */
     public function googleLogin(): void {
-        $data = getRequestBody();
-        $idToken = $data['credential'] ?? $data['id_token'] ?? '';
+        try {
+            $data = getRequestBody();
+            $idToken = $data['credential'] ?? $data['id_token'] ?? '';
 
-        if (empty($idToken)) {
-            errorResponse('Google ID token (credential) is required.', 422);
-            return;
-        }
-
-        // Verify ID token directly with Google's secure tokeninfo service
-        $googleUser = $this->verifyGoogleToken($idToken);
-        if (!$googleUser) {
-            errorResponse('Google authentication failed: Invalid or expired token.', 401);
-            return;
-        }
-
-        $email = filter_var($googleUser['email'] ?? '', FILTER_VALIDATE_EMAIL);
-        if (!$email) {
-            errorResponse('Invalid email returned from Google account.', 422);
-            return;
-        }
-
-        $name = sanitizeInput($googleUser['name'] ?? explode('@', $email)[0]);
-        $avatar = $googleUser['picture'] ?? null;
-
-        // Check if user already exists
-        $user = $this->userModel->findByEmail($email);
-
-        if ($user) {
-            // Existing user: update avatar if missing
-            if (!empty($avatar) && empty($user['avatar'])) {
-                $this->userModel->updateAvatar((int)$user['id'], $avatar);
-                $user['avatar'] = $avatar;
+            if (empty($idToken)) {
+                errorResponse('Google ID token (credential) is required.', 422);
+                return;
             }
-            unset($user['password']);
-            $token = AuthMiddleware::generateToken($user);
+
+            // Verify ID token directly with Google's secure tokeninfo service
+            $googleUser = $this->verifyGoogleToken($idToken);
+            if (!$googleUser) {
+                errorResponse('Google authentication failed: Token could not be verified by Google.', 401);
+                return;
+            }
+
+            $email = filter_var($googleUser['email'] ?? '', FILTER_VALIDATE_EMAIL);
+            if (!$email) {
+                errorResponse('Invalid email returned from Google account.', 422);
+                return;
+            }
+
+            $name = sanitizeInput($googleUser['name'] ?? explode('@', $email)[0]);
+            $avatar = $googleUser['picture'] ?? null;
+
+            // Check if user already exists
+            $user = $this->userModel->findByEmail($email);
+
+            if ($user) {
+                // Existing user: update avatar if missing
+                if (!empty($avatar) && empty($user['avatar'])) {
+                    $this->userModel->updateAvatar((int)$user['id'], $avatar);
+                    $user['avatar'] = $avatar;
+                }
+                unset($user['password']);
+                $token = AuthMiddleware::generateToken($user);
+
+                jsonResponse([
+                    'user'  => $user,
+                    'token' => $token,
+                    'isNew' => false,
+                ], 200, 'Welcome back, ' . $user['name'] . '!');
+                return;
+            }
+
+            // New user: register automatically with Google details
+            $randomPassword = bin2hex(random_bytes(16));
+            $userId = $this->userModel->create([
+                'name'     => $name,
+                'email'    => $email,
+                'password' => $randomPassword,
+                'role'     => 'student',
+                'avatar'   => $avatar,
+            ]);
+
+            $newUser = [
+                'id'     => $userId,
+                'name'   => $name,
+                'email'  => $email,
+                'role'   => 'student',
+                'avatar' => $avatar,
+            ];
+
+            $token = AuthMiddleware::generateToken($newUser);
 
             jsonResponse([
-                'user'  => $user,
+                'user'  => $newUser,
                 'token' => $token,
-                'isNew' => false,
-            ], 200, 'Welcome back, ' . $user['name'] . '!');
-            return;
+                'isNew' => true,
+            ], 201, 'Account successfully created with Google. Welcome to Sankalp IAS!');
+        } catch (Throwable $e) {
+            error_log("Google Login Exception: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+            errorResponse('Google login error: ' . $e->getMessage(), 500);
         }
-
-        // New user: register automatically with Google details
-        $randomPassword = bin2hex(random_bytes(16));
-        $userId = $this->userModel->create([
-            'name'     => $name,
-            'email'    => $email,
-            'password' => $randomPassword,
-            'role'     => 'student',
-            'avatar'   => $avatar,
-        ]);
-
-        $newUser = [
-            'id'     => $userId,
-            'name'   => $name,
-            'email'  => $email,
-            'role'   => 'student',
-            'avatar' => $avatar,
-        ];
-
-        $token = AuthMiddleware::generateToken($newUser);
-
-        jsonResponse([
-            'user'  => $newUser,
-            'token' => $token,
-            'isNew' => true,
-        ], 201, 'Account successfully created with Google. Welcome to Sankalp IAS!');
     }
 
     /**
@@ -170,21 +175,26 @@ class AuthController {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Prevent cURL error 60 on shared hostings
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 12);
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlErr = curl_error($ch);
             curl_close($ch);
 
             if ($httpCode !== 200 || !$response) {
+                error_log("Google Token Verification cURL failed. Code: {$httpCode}, Err: {$curlErr}");
                 return null;
             }
         } else {
             $ctx = stream_context_create([
-                'http' => ['timeout' => 10, 'ignore_errors' => true]
+                'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false],
+                'http' => ['timeout' => 12, 'ignore_errors' => true]
             ]);
             $response = @file_get_contents($url, false, $ctx);
             if (!$response) {
+                error_log("Google Token Verification file_get_contents failed.");
                 return null;
             }
         }
@@ -196,23 +206,27 @@ class AuthController {
 
         // Verify audience matches our Google Client ID
         if (isset($payload['aud']) && trim($payload['aud']) !== trim($expectedClientId)) {
+            error_log("Google Token Audience mismatch. Expected: {$expectedClientId}, Got: " . ($payload['aud'] ?? 'none'));
             return null;
         }
 
         // Verify issuer is Google
         $validIssuers = ['accounts.google.com', 'https://accounts.google.com'];
         if (isset($payload['iss']) && !in_array($payload['iss'], $validIssuers, true)) {
+            error_log("Google Token Issuer mismatch: " . ($payload['iss'] ?? 'none'));
             return null;
         }
 
         // Verify token expiration
         if (isset($payload['exp']) && (int)$payload['exp'] < time()) {
+            error_log("Google Token Expired.");
             return null;
         }
 
         // Verify email ownership
         $emailVerified = $payload['email_verified'] ?? false;
         if ($emailVerified !== true && $emailVerified !== 'true') {
+            error_log("Google Token Email not verified.");
             return null;
         }
 
